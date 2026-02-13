@@ -1,0 +1,47 @@
+{
+  "name": "rehype-gfm-components",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Rehype plugin that transforms GFM conventions into rich documentation components",
+  "license": "MIT",
+  "exports": {
+    ".": "./index.js",
+    "./starlight": "./adapters/starlight.js"
+  },
+  "files": [
+    "index.js",
+    "transforms/",
+    "adapters/",
+    "scripts/",
+    "lib/"
+  ],
+  "keywords": [
+    "rehype",
+    "gfm",
+    "starlight",
+    "markdown",
+    "documentation"
+  ],
+  "peerDependencies": {
+    "@astrojs/starlight": ">=0.30.0"
+  },
+  "peerDependenciesMeta": {
+    "@astrojs/starlight": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "hast-util-from-html-isomorphic": "^2.0.0",
+    "unist-util-visit": "^5.0.0"
+  },
+  "devDependencies": {
+    "rehype": "^13.0.0",
+    "rehype-raw": "^7.0.0",
+    "rehype-stringify": "^10.0.0",
+    "remark-gfm": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.0.0",
+    "unified": "^11.0.0",
+    "vitest": "^3.0.0"
+  }
+}
