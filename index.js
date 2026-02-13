@@ -1,4 +1,4 @@
-import { visit, SKIP } from "unist-util-visit";
+import { visit } from "unist-util-visit";
 import { collectRanges } from "./lib/collect-ranges.js";
 import { parseComment } from "./lib/parse-comment.js";
 import { steps } from "./transforms/steps.js";
