@@ -1,5 +1,6 @@
 import { visit } from "unist-util-visit";
-import { collectRanges } from "./lib/collect-ranges.js";
+import { collectRanges, parseNodeAsComment } from "./lib/collect-ranges.js";
+import { getCommentValue } from "./lib/comment-value.js";
 import { parseComment } from "./lib/parse-comment.js";
 import { steps } from "./transforms/steps.js";
 import { badge } from "./transforms/badge.js";
@@ -24,6 +25,10 @@ const INLINE = new Set(["badge", "icon"]);
 
 /**
  * Rehype plugin that transforms GFM comment markers into rich components.
+ *
+ * Handles both parsed HAST `comment` nodes (when rehype-raw is in the
+ * pipeline, e.g., standalone usage) and unparsed `raw` nodes (when used
+ * inside Astro/Starlight's pipeline which doesn't use rehype-raw).
  *
  * @param {GfmComponentsOptions} [options]
  * @returns {import('unified').Transformer}
@@ -68,11 +73,9 @@ function processBlockTransforms(tree, transforms, options) {
         const nextNodes = [];
         for (let j = startIdx + 1; j < node.children.length; j++) {
           const child = node.children[j];
-          // Stop at next recognized comment
-          if (child.type === "comment") {
-            const parsed = parseComment(child.value);
-            if (parsed) break;
-          }
+          // Stop at next recognized comment (either type)
+          if (parseNodeAsComment(child)) break;
+
           nextNodes.push(child);
           // For card, stop after first blockquote
           if (
@@ -114,6 +117,7 @@ function processBlockTransforms(tree, transforms, options) {
 
 /**
  * Process inline transforms (badge, icon) within element children.
+ * Handles both `comment` and `raw` node types.
  */
 function processInlineTransforms(tree, transforms, options) {
   visit(tree, "element", (node) => {
@@ -121,9 +125,10 @@ function processInlineTransforms(tree, transforms, options) {
 
     for (let i = node.children.length - 1; i >= 0; i--) {
       const child = node.children[i];
-      if (child.type !== "comment") continue;
+      const commentText = getCommentValue(child);
+      if (commentText === null) continue;
 
-      const parsed = parseComment(child.value);
+      const parsed = parseComment(commentText);
       if (!parsed) continue;
 
       if (parsed.keyword === "badge" && i > 0) {
@@ -157,13 +162,19 @@ function processInlineTransforms(tree, transforms, options) {
 }
 
 /**
- * Remove any remaining recognized comment nodes.
+ * Remove any remaining recognized comment nodes (both `comment` and `raw` types).
  */
 function cleanupComments(tree) {
-  visit(tree, "comment", (node, index, parent) => {
+  visit(tree, (node, index, parent) => {
     if (!parent || index === undefined) return;
-    const parsed = parseComment(node.value);
+    if (node.type !== "comment" && node.type !== "raw") return;
+
+    const commentText = getCommentValue(node);
+    if (commentText === null) return;
+
+    const parsed = parseComment(commentText);
     if (!parsed) return;
+
     parent.children.splice(index, 1);
     return index; // revisit this index
   });

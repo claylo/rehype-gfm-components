@@ -1,4 +1,5 @@
 import { parseComment } from "../lib/parse-comment.js";
+import { getCommentValue } from "../lib/comment-value.js";
 
 function textContent(node) {
   if (node.type === "text") return node.value;
@@ -102,8 +103,9 @@ export function cardgrid(content, _params) {
   let currentParams = {};
 
   for (const node of content) {
-    if (node.type === "comment") {
-      const parsed = parseComment(node.value);
+    const commentText = getCommentValue(node);
+    if (commentText !== null) {
+      const parsed = parseComment(commentText);
       if (parsed && parsed.keyword === "card") {
         currentParams = parsed.params;
         continue;
