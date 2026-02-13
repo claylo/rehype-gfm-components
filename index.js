@@ -2,6 +2,7 @@ import { visit, SKIP } from "unist-util-visit";
 import { collectRanges } from "./lib/collect-ranges.js";
 import { parseComment } from "./lib/parse-comment.js";
 import { steps } from "./transforms/steps.js";
+import { badge } from "./transforms/badge.js";
 
 /**
  * @typedef {Object} GfmComponentsOptions
@@ -168,7 +169,7 @@ function cleanupComments(tree) {
  * @returns {Record<string, Function>}
  */
 function loadTransforms(enabled) {
-  const all = { steps };
+  const all = { steps, badge };
   if (!enabled) return all;
   return Object.fromEntries(
     Object.entries(all).filter(([k]) => enabled.includes(k))
