@@ -7,6 +7,7 @@ import { icon } from "./transforms/icon.js";
 import { linkbutton } from "./transforms/linkbutton.js";
 import { linkcard, linkcards } from "./transforms/linkcard.js";
 import { card, cardgrid } from "./transforms/card.js";
+import { tabs } from "./transforms/tabs.js";
 
 /**
  * @typedef {Object} GfmComponentsOptions
@@ -173,7 +174,7 @@ function cleanupComments(tree) {
  * @returns {Record<string, Function>}
  */
 function loadTransforms(enabled) {
-  const all = { steps, badge, icon, linkbutton, linkcard, linkcards, card, cardgrid };
+  const all = { steps, badge, icon, linkbutton, linkcard, linkcards, card, cardgrid, tabs };
   if (!enabled) return all;
   return Object.fromEntries(
     Object.entries(all).filter(([k]) => enabled.includes(k))
