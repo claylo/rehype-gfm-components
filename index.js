@@ -3,6 +3,7 @@ import { collectRanges } from "./lib/collect-ranges.js";
 import { parseComment } from "./lib/parse-comment.js";
 import { steps } from "./transforms/steps.js";
 import { badge } from "./transforms/badge.js";
+import { icon } from "./transforms/icon.js";
 
 /**
  * @typedef {Object} GfmComponentsOptions
@@ -169,7 +170,7 @@ function cleanupComments(tree) {
  * @returns {Record<string, Function>}
  */
 function loadTransforms(enabled) {
-  const all = { steps, badge };
+  const all = { steps, badge, icon };
   if (!enabled) return all;
   return Object.fromEntries(
     Object.entries(all).filter(([k]) => enabled.includes(k))
