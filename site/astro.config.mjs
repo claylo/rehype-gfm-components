@@ -6,6 +6,7 @@ import githubAlerts from "./src/integrations/github-alerts/index.js";
 import rehypeGithubEmoji from 'rehype-github-emoji';
 import { rehypeGfmComponents } from "rehype-gfm-components";
 import starlightGfmComponents from "rehype-gfm-components/starlight";
+import rehypeBasePath from "./src/plugins/rehype-base-path.js";
 
 // https://astro.build/config
 export default defineConfig({
@@ -15,7 +16,7 @@ export default defineConfig({
     defaultStrategy: 'viewport'
   },
   markdown: {
-    rehypePlugins: [rehypeGithubEmoji, rehypeGfmComponents],
+    rehypePlugins: [rehypeGithubEmoji, rehypeGfmComponents, [rehypeBasePath, "/rehype-gfm-components"]],
   },
   integrations: [
     starlight({
