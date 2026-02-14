@@ -1,3 +1,10 @@
+---
+title: Design Document
+description: Architecture and GFM conventions for rehype-gfm-components
+sidebar:
+  order: 2
+---
+
 # rehype-gfm-components Design
 
 Write GFM. View it on GitHub. Deploy it with Starlight. The same Markdown file works in both contexts: plain and readable on GitHub, rich and interactive in Starlight.
@@ -30,7 +37,7 @@ rehype-gfm-components/
 
 ### Core rehype plugin (`index.js`)
 
-Single pass over the HAST tree. Finds HTML comment nodes, matches against registered component keywords, dispatches to the appropriate transform module. Framework-agnostic: the transform modules produce HTML structure, and the adapter configures class names and component-specific details.
+Multi-pass over the HAST tree. Pass 1 handles block-level transforms (paired and self-closing comment ranges). Pass 2 handles inline transforms (badge, icon within paragraph content). Pass 3 hydrates icon placeholders with SVG content. Pass 4 converts GFM footnotes to inline tooltips. Pass 5 cleans up remaining comment markers. Each pass finds HTML comment nodes, matches against registered component keywords, and dispatches to the appropriate transform module. Framework-agnostic: the transform modules produce HTML structure, and the adapter configures class names and component-specific details.
 
 ### Starlight adapter (`adapters/starlight.js`)
 

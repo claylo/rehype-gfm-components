@@ -1,0 +1,19 @@
+{
+  "name": "rehype-gfm-components",
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.37.6",
+    "astro": "^5.17.2",
+    "rehype-gfm-components": "link:..",
+    "rehype-github-emoji": "^1.0.0",
+    "sharp": "^0.34.5",
+    "unist-util-visit": "^5.1.0"
+  }
+}

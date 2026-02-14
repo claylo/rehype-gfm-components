@@ -1,3 +1,10 @@
+---
+title: Implementation Plan
+description: Step-by-step task breakdown for building rehype-gfm-components
+sidebar:
+  order: 3
+---
+
 # rehype-gfm-components Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
