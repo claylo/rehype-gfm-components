@@ -7,6 +7,8 @@ jobs:
   ci:
     name: ${{matrix.node}}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -25,10 +27,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - run: pnpm test
-
+      - run: pnpm vitest run --coverage
+      - uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true
     strategy:
       matrix:
         node:
-          - lts/hydrogen
+          - lts/*
           - node
