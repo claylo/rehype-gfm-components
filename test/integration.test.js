@@ -137,4 +137,50 @@ This feature is \`New\`<!-- badge variant:tip --> and ready.
     expect(html).toContain("Docs");
     expect(html).toContain("Complete documentation");
   });
+
+  it("passes bare details/summary through undisturbed", async () => {
+    const md = [
+      "<details>",
+      "<summary>Click to expand</summary>",
+      "",
+      "Hidden content here.",
+      "",
+      "</details>",
+    ].join("\n");
+
+    const html = await process(md);
+    expect(html).toContain("<details>");
+    expect(html).toContain("<summary>");
+    expect(html).toContain("Click to expand");
+    expect(html).toContain("Hidden content here.");
+    // Should NOT be converted to tabs
+    expect(html).not.toContain("starlight-tabs");
+  });
+
+  it("wraps accordiongroup details in a grouping div", async () => {
+    const md = [
+      "<!-- accordiongroup -->",
+      "<details>",
+      "<summary>Question 1</summary>",
+      "",
+      "Answer 1.",
+      "",
+      "</details>",
+      "<details>",
+      "<summary>Question 2</summary>",
+      "",
+      "Answer 2.",
+      "",
+      "</details>",
+      "<!-- /accordiongroup -->",
+    ].join("\n");
+
+    const html = await process(md);
+    expect(html).toContain('class="gfm-accordion-group"');
+    expect(html).toContain("Question 1");
+    expect(html).toContain("Question 2");
+    expect(html).toContain("Answer 1.");
+    expect(html).toContain("Answer 2.");
+    expect(html).not.toContain("starlight-tabs");
+  });
 });

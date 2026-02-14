@@ -31,7 +31,7 @@ function extractLinkData(nodes) {
   return { href, title, description };
 }
 
-function makeLinkCard(href, title, description) {
+function makeLinkCard(href, title, description, options) {
   const stackChildren = [
     {
       type: "element",
@@ -57,6 +57,14 @@ function makeLinkCard(href, title, description) {
     });
   }
 
+  // Arrow icon
+  const arrowIcon = {
+    type: "element",
+    tagName: "span",
+    properties: { "data-gfm-icon": "right-arrow", className: ["icon"] },
+    children: [],
+  };
+
   return {
     type: "element",
     tagName: "div",
@@ -68,6 +76,7 @@ function makeLinkCard(href, title, description) {
         properties: { className: ["sl-flex", "stack"] },
         children: stackChildren,
       },
+      arrowIcon,
     ],
   };
 }
@@ -84,7 +93,7 @@ export function linkcard(content, _params) {
     if (node.type === "element" && node.tagName === "p") {
       const { href, title, description } = extractLinkData(node.children);
       if (href && title) {
-        return [makeLinkCard(href, title, description)];
+        return [makeLinkCard(href, title, description, _params)];
       }
     }
   }
@@ -112,7 +121,7 @@ export function linkcards(content, _params) {
             : li.children;
         const { href, title, description } = extractLinkData(searchNodes || []);
         if (href && title) {
-          cards.push(makeLinkCard(href, title, description));
+          cards.push(makeLinkCard(href, title, description, _params));
         }
       }
     }

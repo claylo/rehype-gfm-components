@@ -1,7 +1,11 @@
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { visit } from "unist-util-visit";
+import { fromHtmlIsomorphic } from "hast-util-from-html-isomorphic";
 import { collectRanges, parseNodeAsComment } from "./lib/collect-ranges.js";
 import { getCommentValue } from "./lib/comment-value.js";
 import { parseComment } from "./lib/parse-comment.js";
+import { loadStarlightIcons } from "./lib/load-starlight-icons.js";
 import { steps } from "./transforms/steps.js";
 import { badge } from "./transforms/badge.js";
 import { icon } from "./transforms/icon.js";
@@ -10,12 +14,30 @@ import { linkcard, linkcards } from "./transforms/linkcard.js";
 import { card, cardgrid } from "./transforms/card.js";
 import { tabs } from "./transforms/tabs.js";
 import { filetree } from "./transforms/filetree.js";
+import { accordiongroup } from "./transforms/accordiongroup.js";
+import { processTooltips } from "./transforms/tooltip.js";
 
 /**
  * @typedef {Object} GfmComponentsOptions
  * @property {string[]} [transforms] - Which transforms to enable (default: all)
  * @property {Record<string, string>} [icons] - Icon name → SVG path string map
+ * @property {boolean} [tooltips] - Enable footnote→tooltip transform (default: true)
  */
+
+/**
+ * Try to find and load Starlight icons from the consuming project.
+ * Returns empty object if Starlight isn't installed.
+ */
+function autoDetectIcons() {
+  try {
+    const require = createRequire(join(process.cwd(), "noop.js"));
+    // Use the main entry point (always exported) and navigate up to package root.
+    const starlightDir = dirname(require.resolve("@astrojs/starlight"));
+    return loadStarlightIcons(starlightDir);
+  } catch {
+    return {};
+  }
+}
 
 /** Transforms that consume a self-closing marker + next sibling. */
 const SELF_CLOSING = new Set(["card"]);
@@ -34,18 +56,76 @@ const INLINE = new Set(["badge", "icon"]);
  * @returns {import('unified').Transformer}
  */
 export function rehypeGfmComponents(options = {}) {
+  // Auto-detect Starlight icons if not explicitly provided
+  if (!options.icons) {
+    options = { ...options, icons: autoDetectIcons() };
+  }
+
   const transforms = loadTransforms(options.transforms);
 
   return (tree) => {
+    // Pre-pass: Split compound raw nodes so each HTML block/comment is separate.
+    // Without rehype-raw (e.g., Astro), remark merges adjacent HTML blocks into
+    // a single raw node. This makes individual comments/elements unreachable.
+    splitCompoundRawNodes(tree);
+
     // Pass 1: Block-level transforms (paired and self-closing markers)
     processBlockTransforms(tree, transforms, options);
 
     // Pass 2: Inline transforms (badge, icon within paragraph content)
     processInlineTransforms(tree, transforms, options);
 
-    // Pass 3: Clean up any remaining recognized comment markers
+    // Pass 3: Hydrate data-gfm-icon placeholders with SVG content
+    if (options.icons) {
+      hydrateIcons(tree, options.icons);
+    }
+
+    // Pass 4: Transform GFM footnotes into inline tooltips
+    if (options.tooltips !== false) {
+      processTooltips(tree);
+    }
+
+    // Pass 5: Clean up any remaining recognized comment markers
     cleanupComments(tree);
   };
+}
+
+/**
+ * Split compound raw nodes so each HTML block or comment is a separate node.
+ *
+ * Without rehype-raw (e.g., Astro's pipeline), remark-rehype merges adjacent
+ * HTML blocks into single raw nodes like "</details>\n<!-- /tabs -->".
+ * This prevents collectRanges from finding individual comment markers.
+ *
+ * Splits at ">\n<" boundaries (end of one HTML construct → start of another).
+ */
+function splitCompoundRawNodes(tree) {
+  visit(tree, (node) => {
+    if (!node.children) return;
+
+    let changed = false;
+    const newChildren = [];
+
+    for (const child of node.children) {
+      if (
+        child.type === "raw" &&
+        typeof child.value === "string" &&
+        child.value.includes("\n")
+      ) {
+        const parts = child.value.split(/(?<=>)\n(?=<)/);
+        if (parts.length > 1) {
+          changed = true;
+          for (const part of parts) {
+            newChildren.push({ type: "raw", value: part });
+          }
+          continue;
+        }
+      }
+      newChildren.push(child);
+    }
+
+    if (changed) node.children = newChildren;
+  });
 }
 
 /**
@@ -181,12 +261,37 @@ function cleanupComments(tree) {
 }
 
 /**
+ * Replace data-gfm-icon placeholder spans with actual SVG elements.
+ * Transforms like filetree and card emit <span data-gfm-icon="name">;
+ * this pass resolves those to inline SVGs using the icons map.
+ */
+function hydrateIcons(tree, icons) {
+  visit(tree, "element", (node, index, parent) => {
+    if (!parent || index === undefined) return;
+    const iconName = node.properties?.["data-gfm-icon"] || node.properties?.dataGfmIcon;
+    if (!iconName) return;
+
+    const svgContent = icons[iconName];
+    if (!svgContent) return;
+
+    const svg = fromHtmlIsomorphic(
+      `<svg aria-hidden="true" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" class="${(node.properties.className || []).join(" ")}">${svgContent}</svg>`,
+      { fragment: true }
+    ).children[0];
+
+    if (svg) {
+      parent.children[index] = svg;
+    }
+  });
+}
+
+/**
  * Load transform modules based on config.
  * @param {string[]} [enabled]
  * @returns {Record<string, Function>}
  */
 function loadTransforms(enabled) {
-  const all = { steps, badge, icon, linkbutton, linkcard, linkcards, card, cardgrid, tabs, filetree };
+  const all = { steps, badge, icon, linkbutton, linkcard, linkcards, card, cardgrid, tabs, filetree, accordiongroup };
   if (!enabled) return all;
   return Object.fromEntries(
     Object.entries(all).filter(([k]) => enabled.includes(k))

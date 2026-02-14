@@ -13,8 +13,26 @@ function textContent(node) {
 
 /**
  * Find <details> elements in content and extract tab data.
+ * Handles both parsed HAST elements (rehype-raw pipeline) and
+ * raw nodes (Astro's pipeline where HTML stays unparsed).
  */
 function extractTabs(content) {
+  // Try parsed elements first (rehype-raw pipeline)
+  const fromElements = extractTabsFromElements(content);
+  if (fromElements.length > 0) return fromElements;
+
+  // Fall back to raw nodes (Astro pipeline)
+  return extractTabsFromRaw(content);
+}
+
+const DETAILS_OPEN_RE = /^<details[\s>]/i;
+const SUMMARY_RE = /<summary>([\s\S]*?)<\/summary>/i;
+const DETAILS_CLOSE_RE = /^<\/details\s*>/i;
+
+/**
+ * Extract tabs from parsed HAST element nodes.
+ */
+function extractTabsFromElements(content) {
   const tabs = [];
 
   for (const node of content) {
@@ -29,6 +47,69 @@ function extractTabs(content) {
     );
 
     tabs.push({ label, content: panelContent });
+  }
+
+  return tabs;
+}
+
+/**
+ * Extract tabs from raw nodes (Astro pipeline without rehype-raw).
+ *
+ * After splitCompoundRawNodes, HTML blocks are individual raw nodes:
+ *   raw: "<details open>"
+ *   raw: "<summary>npm</summary>"     (may be in same node as <details>)
+ *   element: pre > code               (from code fence)
+ *   raw: "</details>"
+ */
+function extractTabsFromRaw(content) {
+  const tabs = [];
+  let i = 0;
+
+  while (i < content.length) {
+    const node = content[i];
+
+    if (node.type === "raw" && typeof node.value === "string") {
+      const trimmed = node.value.trim();
+      if (DETAILS_OPEN_RE.test(trimmed)) {
+        // Summary may be in the same node or a separate one
+        let label = "";
+        const summaryMatch = trimmed.match(SUMMARY_RE);
+        if (summaryMatch) {
+          label = summaryMatch[1].trim();
+        }
+
+        // Collect content nodes until </details>
+        const panelContent = [];
+        i++;
+        while (i < content.length) {
+          const current = content[i];
+          if (current.type === "raw" && typeof current.value === "string") {
+            const ct = current.value.trim();
+            if (DETAILS_CLOSE_RE.test(ct)) break;
+            // Summary in a separate raw node
+            if (!label && SUMMARY_RE.test(ct)) {
+              const sm = ct.match(SUMMARY_RE);
+              if (sm) label = sm[1].trim();
+              i++;
+              continue;
+            }
+          }
+          // Skip whitespace-only text nodes between raw blocks
+          if (current.type === "text" && !current.value.trim()) {
+            i++;
+            continue;
+          }
+          panelContent.push(current);
+          i++;
+        }
+
+        tabs.push({ label, content: panelContent });
+        i++; // skip </details>
+        continue;
+      }
+    }
+
+    i++;
   }
 
   return tabs;

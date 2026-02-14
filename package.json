@@ -1,19 +1,32 @@
 {
   "name": "rehype-gfm-components",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "description": "Rehype plugin that transforms GFM conventions into rich documentation components",
   "license": "MIT",
+  "author": "Clay Loveless",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/claylo/rehype-gfm-components.git"
+  },
+  "bugs": {
+    "url": "https://github.com/claylo/rehype-gfm-components/issues"
+  },
+  "homepage": "https://github.com/claylo/rehype-gfm-components#readme",
   "exports": {
     ".": "./index.js",
-    "./starlight": "./adapters/starlight.js"
+    "./starlight": "./adapters/starlight.js",
+    "./styles/starlight.css": "./styles/starlight.css"
   },
   "files": [
     "index.js",
     "transforms/",
     "adapters/",
     "scripts/",
-    "lib/"
+    "styles/",
+    "lib/",
+    "README.md",
+    "LICENSE"
   ],
   "keywords": [
     "rehype",

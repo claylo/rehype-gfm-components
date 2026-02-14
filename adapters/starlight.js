@@ -1,67 +1,43 @@
 import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { loadStarlightIcons } from "../lib/load-starlight-icons.js";
-import { rehypeGfmComponents } from "../index.js";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
- * Starlight plugin wrapper for rehype-gfm-components.
+ * Astro integration for rehype-gfm-components in Starlight sites.
  *
- * Loads icon SVG data from Starlight's source, registers the core rehype
- * plugin via an Astro integration, and injects the tab-switching client script.
+ * Injects component CSS and the tab-switching client script.
+ * The rehype plugin itself must be added to the static markdown config
+ * because Astro's updateConfig does not merge rehypePlugins for content
+ * collection processing.
  *
- * @param {Object} [config]
- * @param {string[]} [config.transforms] - Which transforms to enable (default: all)
- * @returns {Object} Starlight plugin
+ * Usage in astro.config.mjs:
+ *   import { rehypeGfmComponents } from "rehype-gfm-components";
+ *   import starlightGfmComponents from "rehype-gfm-components/starlight";
+ *   export default defineConfig({
+ *     markdown: { rehypePlugins: [rehypeGfmComponents] },
+ *     integrations: [starlight({...}), starlightGfmComponents()],
+ *   });
+ *
+ * @returns {import('astro').AstroIntegration}
  */
-export default function starlightGfmComponents(config = {}) {
+export default function starlightGfmComponents() {
   return {
     name: "rehype-gfm-components",
     hooks: {
-      "config:setup"({ addIntegration }) {
-        // Resolve Starlight's package dir via Node's module resolution
-        // from cwd (the consuming project) so it works with linked packages too.
-        const require = createRequire(join(process.cwd(), "noop.js"));
-        let icons = {};
-        try {
-          const starlightDir = dirname(
-            require.resolve("@astrojs/starlight/package.json")
-          );
-          icons = loadStarlightIcons(starlightDir);
-        } catch {
-          console.warn(
-            "[rehype-gfm-components] Could not resolve @astrojs/starlight"
-          );
-        }
-
+      "astro:config:setup"({ injectScript }) {
         const tabScript = readFileSync(
-          join(
-            dirname(new URL(import.meta.url).pathname),
-            "..",
-            "scripts",
-            "tabs.js"
-          ),
+          join(__dirname, "..", "scripts", "tabs.js"),
           "utf-8"
         );
 
-        // Register the rehype plugin AND tab script via an Astro integration.
-        // We use Astro's updateConfig (not Starlight's) to properly merge
-        // the rehype plugin into Astro's markdown pipeline.
-        addIntegration({
-          name: "rehype-gfm-components",
-          hooks: {
-            "astro:config:setup": ({ injectScript, updateConfig: astroUpdateConfig }) => {
-              astroUpdateConfig({
-                markdown: {
-                  rehypePlugins: [
-                    [rehypeGfmComponents, { ...config, icons }],
-                  ],
-                },
-              });
-              injectScript("page", tabScript);
-            },
-          },
-        });
+        // Resolve the absolute path to our CSS file for Vite to process.
+        const cssPath = join(__dirname, "..", "styles", "starlight.css");
+
+        // Import component CSS so Vite bundles it with the page.
+        injectScript("page-ssr", `import ${JSON.stringify(cssPath)};`);
+        injectScript("page", tabScript);
       },
     },
   };

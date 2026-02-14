@@ -10,10 +10,12 @@ describe("card transform", () => {
     expect(html).toContain("Set up your project.");
   });
 
-  it("includes icon placeholder when icon param provided", async () => {
+  it("includes icon SVG when icon param provided", async () => {
     const md = `<!-- card icon:rocket -->\n> **Title**\n>\n> Body text.`;
     const html = await process(md);
-    expect(html).toContain('data-gfm-icon="rocket"');
+    // Auto-detected icons resolve to actual SVGs
+    expect(html).toContain("<svg");
+    expect(html).toContain('class="icon"');
   });
 
   it("removes comment markers", async () => {
@@ -35,8 +37,9 @@ describe("cardgrid transform", () => {
   it("passes icon params to individual cards", async () => {
     const md = `<!-- cardgrid -->\n<!-- card icon:rocket -->\n> **A**\n>\n> body\n\n<!-- card icon:puzzle -->\n> **B**\n>\n> body\n<!-- /cardgrid -->`;
     const html = await process(md);
-    expect(html).toContain('data-gfm-icon="rocket"');
-    expect(html).toContain('data-gfm-icon="puzzle"');
+    // Both cards should have SVG icons (auto-detected)
+    const svgCount = (html.match(/<svg/g) || []).length;
+    expect(svgCount).toBe(2);
   });
 
   it("removes all comment markers", async () => {
