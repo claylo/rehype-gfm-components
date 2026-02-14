@@ -157,6 +157,14 @@ This feature is \`New\`<!-- badge variant:tip --> and ready.
     expect(html).not.toContain("starlight-tabs");
   });
 
+  it("disables tooltips when tooltips: false", async () => {
+    const md = `Astro[^1] is great.\n\n[^1]: A web framework.`;
+    const html = await process(md, { tooltips: false });
+    // Footnote should remain as a standard GFM footnote link, not a tooltip
+    expect(html).not.toContain("data-gfm-tooltip");
+    expect(html).toContain("data-footnote-ref");
+  });
+
   it("wraps accordiongroup details in a grouping div", async () => {
     const md = [
       "<!-- accordiongroup -->",

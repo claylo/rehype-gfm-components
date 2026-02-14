@@ -10,7 +10,6 @@ export default defineConfig({
         "transforms/**",
         "lib/**",
         "adapters/**",
-        "scripts/**",
       ],
       reporter: ["text", "lcov"],
     },
