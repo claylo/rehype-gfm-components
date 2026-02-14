@@ -1,3 +1,5 @@
+import { sanitizeUrl } from "../lib/sanitize-url.js";
+
 /**
  * LinkButton transform: finds the <a> inside the content nodes
  * and replaces it with a styled link button.
@@ -30,6 +32,7 @@ export function linkbutton(content, params) {
   if (!link) return content;
 
   link.properties = link.properties || {};
+  link.properties.href = sanitizeUrl(link.properties.href);
   link.properties.className = ["sl-link-button", "not-content", variant];
 
   return [link];

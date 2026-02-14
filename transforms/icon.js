@@ -1,4 +1,4 @@
-import { fromHtmlIsomorphic } from "hast-util-from-html-isomorphic";
+import { sanitizeSvgContent } from "../lib/sanitize-svg.js";
 
 /**
  * Icon transform: replaces <!-- icon:name --> with an inline SVG.
@@ -17,11 +17,18 @@ export function icon(params, options) {
 
   const svgContent = options?.icons?.[name];
   if (svgContent) {
-    const fragment = fromHtmlIsomorphic(
-      `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">${svgContent}</svg>`,
-      { fragment: true }
-    );
-    return fragment.children[0];
+    return {
+      type: "element",
+      tagName: "svg",
+      properties: {
+        ariaHidden: "true",
+        width: "16",
+        height: "16",
+        viewBox: "0 0 24 24",
+        fill: "currentColor",
+      },
+      children: sanitizeSvgContent(svgContent),
+    };
   }
 
   // Placeholder for adapter to hydrate

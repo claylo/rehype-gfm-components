@@ -1,8 +1,8 @@
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { visit } from "unist-util-visit";
-import { fromHtmlIsomorphic } from "hast-util-from-html-isomorphic";
 import { collectRanges, parseNodeAsComment } from "./lib/collect-ranges.js";
+import { sanitizeSvgContent } from "./lib/sanitize-svg.js";
 import { getCommentValue } from "./lib/comment-value.js";
 import { parseComment } from "./lib/parse-comment.js";
 import { loadStarlightIcons } from "./lib/load-starlight-icons.js";
@@ -274,14 +274,19 @@ function hydrateIcons(tree, icons) {
     const svgContent = icons[iconName];
     if (!svgContent) return;
 
-    const svg = fromHtmlIsomorphic(
-      `<svg aria-hidden="true" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" class="${(node.properties.className || []).join(" ")}">${svgContent}</svg>`,
-      { fragment: true }
-    ).children[0];
-
-    if (svg) {
-      parent.children[index] = svg;
-    }
+    parent.children[index] = {
+      type: "element",
+      tagName: "svg",
+      properties: {
+        ariaHidden: "true",
+        width: "1em",
+        height: "1em",
+        viewBox: "0 0 24 24",
+        fill: "currentColor",
+        className: node.properties.className || [],
+      },
+      children: sanitizeSvgContent(svgContent),
+    };
   });
 }
 

@@ -1,3 +1,5 @@
+import { sanitizeUrl } from "../lib/sanitize-url.js";
+
 /** Separator pattern: em dash or spaced hyphen */
 const SEP_RE = /\s*—\s*|\s+- /;
 
@@ -36,7 +38,7 @@ function makeLinkCard(href, title, description, options) {
     {
       type: "element",
       tagName: "a",
-      properties: { href },
+      properties: { href: sanitizeUrl(href) },
       children: [
         {
           type: "element",
