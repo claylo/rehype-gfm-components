@@ -1,5 +1,5 @@
 ---
-title: GFM Components Test
+title: All-the-Things Demo
 description: Testing all rehype-gfm-components transforms
 ---
 
