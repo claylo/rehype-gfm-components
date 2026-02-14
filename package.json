@@ -12,7 +12,11 @@
   "bugs": {
     "url": "https://github.com/claylo/rehype-gfm-components/issues"
   },
-  "homepage": "https://github.com/claylo/rehype-gfm-components#readme",
+  "homepage": "https://claylo.github.io/rehype-gfm-components",
+  "llms": {
+    "tagline": "Write GFM. View it on GitHub. Deploy it with Starlight. The same Markdown file works in both places — readable on GitHub, rich and interactive in Starlight. No MDX. No imports. No JSX.",
+    "sections": ["guides", "components", "plans"]
+  },
   "exports": {
     ".": "./index.js",
     "./starlight": "./adapters/starlight.js",

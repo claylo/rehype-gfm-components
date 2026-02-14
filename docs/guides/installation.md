@@ -1,6 +1,8 @@
 ---
 title: Installation
 description: How to install and configure rehype-gfm-components
+sidebar:
+  order: 1
 ---
 
 ## Install
